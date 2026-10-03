@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Horror Scorpion Cursor</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,
+body{
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    background:#000;
+}
+
+body{
+    cursor:none;
+}
+
+canvas{
+
+    position:fixed;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+
+<script>
+
+/* =====================================================
+   CANVAS
+===================================================== */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+let W = innerWidth;
+let H = innerHeight;
+
+let DPR =
+    devicePixelRatio || 1;
+
+
+function resize(){
+
+    W = innerWidth;
+    H = innerHeight;
+
+    DPR =
+        devicePixelRatio || 1;
+
+
+    canvas.width =
+        W * DPR;
+
+    canvas.height =
+        H * DPR;
+
+
+    canvas.style.width =
+        W + "px";
+
+    canvas.style.height =
+        H + "px";
+
+
+    ctx.setTransform(
+        DPR,
+        0,
+        0,
+        DPR,
+        0,
+        0
+    );
+}
+
+
+resize();
+
+
+addEventListener(
+    "resize",
+    resize
+);
+
+
+/* =====================================================
+   MOUSE
+===================================================== */
+
+const target = {
+
+    x: W / 2,
+
+    y: H / 2
+
+};
+
+
+const mouse = {
+
+    x: W / 2,
+
+    y: H / 2
+
+};
+
+
+let oldX =
+    mouse.x;
+
+let oldY =
+    mouse.y;
+
+
+let rotation = 0;
+
+
+addEventListener(
+    "mousemove",
+    function(e){
+
+        target.x =
+            e.clientX;
+
+        target.y =
+            e.clientY;
+
+    }
+);
+
+
+/* =====================================================
+   MOBILE TOUCH
+===================================================== */
+
+addEventListener(
+    "touchmove",
+    function(e){
+
+        if(
+            e.touches &&
+            e.touches.length
+        ){
+
+            target.x =
+                e.touches[0].clientX;
+
+            target.y =
+                e.touches[0].clientY;
+
+        }
+
+    },
+    {
+        passive:true
+    }
+);
+
+
+/* =====================================================
+   SCORPION SIZE
+===================================================== */
+
+function getScale(){
+
+    return Math.max(
+
+        280,
+
+        Math.min(
+            W * 0.82,
+            950
+        )
+
+    );
+
+}
+
+
+/* =====================================================
+   BODY
+===================================================== */
+
+const body = [];
+
+const BODY_COUNT = 43;
+
+
+for(
+    let i = 0;
+    i < BODY_COUNT;
+    i++
+){
+
+    body.push({
+
+        x: mouse.x,
+
+        y: mouse.y,
+
+        angle: 0
+
+    });
+
+}
+
+
+/* =====================================================
+   UPDATE
+===================================================== */
+
+function update(){
+
+    /*
+       Smooth mouse follow
+    */
+
+    mouse.x +=
+        (
+            target.x -
+            mouse.x
+        ) * 0.18;
+
+
+    mouse.y +=
+        (
+            target.y -
+            mouse.y
+        ) * 0.18;
+
+
+    /*
+       Movement direction
+    */
+
+    const dx =
+        mouse.x -
+        oldX;
+
+    const dy =
+        mouse.y -
+        oldY;
+
+
+    const speed =
+        Math.hypot(
+            dx,
+            dy
+        );
+
+
+    if(
+        speed > 0.15
+    ){
+
+        const wanted =
+            Math.atan2(
+                dy,
+                dx
+            );
+
+
+        let difference =
+            wanted -
+            rotation;
+
+
+        while(
+            difference >
+            Math.PI
+        ){
+
+            difference -=
+                Math.PI * 2;
+
+        }
+
+
+        while(
+            difference <
+            -Math.PI
+        ){
+
+            difference +=
+                Math.PI * 2;
+
+        }
+
+
+        rotation +=
+            difference * 0.13;
+
+    }
+
+
+    oldX =
+        mouse.x;
+
+    oldY =
+        mouse.y;
+
+
+    /*
+       BODY
+    */
+
+    const S =
+        getScale();
+
+
+    const spacing =
+        S / 48;
+
+
+    body[0].x =
+        mouse.x;
+
+    body[0].y =
+        mouse.y;
+
+    body[0].angle =
+        rotation;
+
+
+    for(
+        let i = 1;
+        i < BODY_COUNT;
+        i++
+    ){
+
+        const previous =
+            body[i - 1];
+
+        const current =
+            body[i];
+
+
+        /*
+           Natural curve
+        */
+
+        const curve =
+            Math.sin(
+                i * 0.15
+            ) *
+            (
+                i /
+                BODY_COUNT
+            ) *
+            0.035;
+
+
+        const a =
+            rotation +
+            Math.PI +
+            curve;
+
+
+        const wantedX =
+            previous.x +
+            Math.cos(a) *
+            spacing;
+
+
+        const wantedY =
+            previous.y +
+            Math.sin(a) *
+            spacing;
+
+
+        current.x +=
+            (
+                wantedX -
+                current.x
+            ) * 0.72;
+
+
+        current.y +=
+            (
+                wantedY -
+                current.y
+            ) * 0.72;
+
+
+        current.angle =
+            a;
+
+    }
+
+}
+
+
+/* =====================================================
+   BODY WIDTH
+===================================================== */
+
+function widthAt(i){
+
+    const t =
+        i /
+        (BODY_COUNT - 1);
+
+
+    /*
+       Thick body
+       → thin tail
+    */
+
+    if(
+        t < 0.52
+    ){
+
+        return (
+            15 -
+            t * 8
+        );
+
+    }
+
+
+    return Math.max(
+
+        2.1,
+
+        9 -
+        (
+            t -
+            0.52
+        ) * 13
+
+    );
+
+}
+
+
+/* =====================================================
+   HORROR ATMOSPHERE
+===================================================== */
+
+function horrorGlow(){
+
+    const head =
+        body[0];
+
+
+    /*
+       Dark red aura
+    */
+
+    const aura =
+        ctx.createRadialGradient(
+
+            head.x,
+            head.y,
+
+            0,
+
+            head.x,
+            head.y,
+
+            130
+
+        );
+
+
+    aura.addColorStop(
+        0,
+        "rgba(120,0,0,.14)"
+    );
+
+
+    aura.addColorStop(
+        0.3,
+        "rgba(70,0,0,.07)"
+    );
+
+
+    aura.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+
+    ctx.fillStyle =
+        aura;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+
+        head.x,
+        head.y,
+
+        130,
+
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fill();
+
+}
+
+
+/* =====================================================
+   HORROR SPINE GLOW
+===================================================== */
+
+function horrorBodyGlow(){
+
+    ctx.save();
+
+
+    ctx.shadowBlur =
+        10;
+
+
+    ctx.shadowColor =
+        "rgba(110,0,0,.55)";
+
+
+    ctx.beginPath();
+
+
+    for(
+        let i = 0;
+        i < BODY_COUNT;
+        i++
+    ){
+
+        const p =
+            body[i];
+
+
+        if(
+            i === 0
+        ){
+
+            ctx.moveTo(
+                p.x,
+                p.y
+            );
+
+        }
+        else{
+
+            ctx.lineTo(
+                p.x,
+                p.y
+            );
+
+        }
+
+    }
+
+
+    ctx.strokeStyle =
+        "rgba(95,0,0,.32)";
+
+
+    ctx.lineWidth =
+        1.2;
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   SKELETAL BODY
+===================================================== */
+
+function drawBody(){
+
+    ctx.save();
+
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+
+    /*
+       Central spine
+    */
+
+    ctx.beginPath();
+
+
+    for(
+        let i = 0;
+        i < BODY_COUNT;
+        i++
+    ){
+
+        const p =
+            body[i];
+
+
+        if(
+            i === 0
+        ){
+
+            ctx.moveTo(
+                p.x,
+                p.y
+            );
+
+        }
+        else{
+
+            ctx.lineTo(
+                p.x,
+                p.y
+            );
+
+        }
+
+    }
+
+
+    ctx.strokeStyle =
+        "rgba(190,190,190,.42)";
+
+
+    ctx.lineWidth =
+        2;
+
+
+    ctx.stroke();
+
+
+    /*
+       Dense ribs
+    */
+
+    for(
+        let i = 1;
+        i < BODY_COUNT;
+        i++
+    ){
+
+        const p =
+            body[i];
+
+
+        const previous =
+            body[i - 1];
+
+
+        const a =
+            Math.atan2(
+
+                p.y -
+                previous.y,
+
+                p.x -
+                previous.x
+
+            );
+
+
+        const w =
+            widthAt(i);
+
+
+        ctx.save();
+
+
+        ctx.translate(
+            p.x,
+            p.y
+        );
+
+
+        ctx.rotate(a);
+
+
+        /*
+           Main rib
+        */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -1,
+            -w
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            4,
+            -w * 0.35,
+
+            7,
+            0
+
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            4,
+            w * 0.35,
+
+            -1,
+            w
+
+        );
+
+
+        ctx.strokeStyle =
+            `rgba(205,205,205,${
+                Math.max(
+                    .20,
+                    .82 -
+                    i * .013
+                )
+            })`;
+
+
+        ctx.lineWidth =
+            i < 25
+            ? 1.35
+            : .85;
+
+
+        ctx.stroke();
+
+
+        /*
+           Inner rib
+        */
+
+        if(
+            i < 32
+        ){
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                1,
+                -w * .72
+            );
+
+
+            ctx.lineTo(
+                5,
+                0
+            );
+
+
+            ctx.lineTo(
+                1,
+                w * .72
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(130,130,130,.42)";
+
+
+            ctx.lineWidth =
+                .65;
+
+
+            ctx.stroke();
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   LEGS
+===================================================== */
+
+function drawLegs(){
+
+    const now =
+        performance.now() *
+        .0035;
+
+
+    ctx.save();
+
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+
+    /*
+       Four pairs
+       = eight legs
+    */
+
+    for(
+        let i = 0;
+        i < 4;
+        i++
+    ){
+
+        const bodyIndex =
+            5 + i * 5;
+
+
+        const p =
+            body[
+                Math.min(
+                    bodyIndex,
+                    BODY_COUNT - 2
+                )
+            ];
+
+
+        for(
+            const side of [-1,1]
+        ){
+
+            /*
+               Creepy movement
+            */
+
+            const walking =
+                Math.sin(
+
+                    now +
+                    i * .9 +
+                    side
+
+                );
+
+
+            const bodyAngle =
+                p.angle;
+
+
+            const sideAngle =
+                bodyAngle +
+                side *
+                Math.PI / 2;
+
+
+            /*
+               Upper leg
+            */
+
+            const upper =
+                23 +
+                i * 4;
+
+
+            const a1 =
+                sideAngle +
+                side * .18 +
+                walking * .055;
+
+
+            const knee = {
+
+                x:
+                    p.x +
+                    Math.cos(a1) *
+                    upper,
+
+                y:
+                    p.y +
+                    Math.sin(a1) *
+                    upper
+
+            };
+
+
+            /*
+               Lower leg
+            */
+
+            const lower =
+                25 +
+                i * 4;
+
+
+            const a2 =
+                sideAngle +
+                side *
+                (
+                    .45 +
+                    i * .04
+                ) +
+                walking * .08;
+
+
+            const foot = {
+
+                x:
+                    knee.x +
+                    Math.cos(a2) *
+                    lower,
+
+                y:
+                    knee.y +
+                    Math.sin(a2) *
+                    lower
+
+            };
+
+
+            /*
+               Upper
+            */
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                p.x,
+                p.y
+            );
+
+
+            ctx.lineTo(
+                knee.x,
+                knee.y
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(175,175,175,.75)";
+
+
+            ctx.lineWidth =
+                1.15;
+
+
+            ctx.stroke();
+
+
+            /*
+               Knee
+            */
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                knee.x,
+                knee.y,
+
+                2.1,
+
+                0,
+                Math.PI * 2
+
+            );
+
+
+            ctx.fillStyle =
+                "rgba(205,205,205,.85)";
+
+
+            ctx.fill();
+
+
+            /*
+               Lower
+            */
+
+            ctx.beginPath();
+
+
+            ctx.moveTo(
+                knee.x,
+                knee.y
+            );
+
+
+            ctx.lineTo(
+                foot.x,
+                foot.y
+            );
+
+
+            ctx.strokeStyle =
+                "rgba(135,135,135,.7)";
+
+
+            ctx.lineWidth =
+                1;
+
+
+            ctx.stroke();
+
+
+            /*
+               Foot
+            */
+
+            ctx.beginPath();
+
+
+            ctx.arc(
+
+                foot.x,
+                foot.y,
+
+                2,
+
+                0,
+                Math.PI * 2
+
+            );
+
+
+            ctx.fillStyle =
+                "#ddd";
+
+
+            ctx.fill();
+
+        }
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   FRONT CLAWS
+===================================================== */
+
+function drawClaws(){
+
+    const head =
+        body[0];
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        head.x,
+        head.y
+    );
+
+
+    ctx.rotate(
+        rotation
+    );
+
+
+    for(
+        const side of [-1,1]
+    ){
+
+        const s =
+            side;
+
+
+        /*
+           Arm
+        */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            5,
+            s * 4
+        );
+
+
+        ctx.lineTo(
+            24,
+            s * 15
+        );
+
+
+        ctx.lineTo(
+            45,
+            s * 12
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(190,190,190,.85)";
+
+
+        ctx.lineWidth =
+            1.3;
+
+
+        ctx.stroke();
+
+
+        /*
+           Upper pincer
+        */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            43,
+            s * 12
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            55,
+            s * 2,
+
+            68,
+            s * 9
+
+        );
+
+
+        ctx.stroke();
+
+
+        /*
+           Lower pincer
+        */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            43,
+            s * 12
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            55,
+            s * 20,
+
+            68,
+            s * 13
+
+        );
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   SHARP CLAW TIPS
+===================================================== */
+
+function horrorClawTips(){
+
+    const head =
+        body[0];
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        head.x,
+        head.y
+    );
+
+
+    ctx.rotate(
+        rotation
+    );
+
+
+    for(
+        const side of [-1,1]
+    ){
+
+        const s =
+            side;
+
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            62,
+            s * 9
+        );
+
+
+        ctx.lineTo(
+            79,
+            s * 4
+        );
+
+
+        ctx.lineTo(
+            64,
+            s * 16
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(225,225,225,.9)";
+
+
+        ctx.lineWidth =
+            1.3;
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   HEAD
+===================================================== */
+
+function drawHead(){
+
+    const p =
+        body[0];
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        p.x,
+        p.y
+    );
+
+
+    ctx.rotate(
+        rotation
+    );
+
+
+    /*
+       Head
+    */
+
+    ctx.beginPath();
+
+
+    ctx.ellipse(
+
+        0,
+        0,
+
+        11,
+        8,
+
+        0,
+        0,
+        Math.PI * 2
+
+    );
+
+
+    ctx.fillStyle =
+        "#030303";
+
+
+    ctx.strokeStyle =
+        "rgba(220,220,220,.85)";
+
+
+    ctx.lineWidth =
+        1.5;
+
+
+    ctx.fill();
+
+
+    ctx.stroke();
+
+
+    /*
+       Feelers
+    */
+
+    for(
+        const side of [-1,1]
+    ){
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            8,
+            side * 3
+        );
+
+
+        ctx.quadraticCurveTo(
+
+            25,
+            side * 12,
+
+            38,
+            side * 22
+
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(155,155,155,.7)";
+
+
+        ctx.lineWidth =
+            .8;
+
+
+        ctx.stroke();
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   HORROR EYES
+===================================================== */
+
+function horrorEyes(){
+
+    const head =
+        body[0];
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        head.x,
+        head.y
+    );
+
+
+    ctx.rotate(
+        rotation
+    );
+
+
+    for(
+        const side of [-1,1]
+    ){
+
+        const x =
+            7;
+
+        const y =
+            side * 3.5;
+
+
+        /*
+           Red eye glow
+        */
+
+        const glow =
+            ctx.createRadialGradient(
+
+                x,
+                y,
+
+                0,
+
+                x,
+                y,
+
+                16
+
+            );
+
+
+        glow.addColorStop(
+
+            0,
+            "rgba(255,0,0,.95)"
+
+        );
+
+
+        glow.addColorStop(
+
+            .22,
+            "rgba(180,0,0,.5)"
+
+        );
+
+
+        glow.addColorStop(
+
+            1,
+            "rgba(80,0,0,0)"
+
+        );
+
+
+        ctx.fillStyle =
+            glow;
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            x,
+            y,
+
+            16,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        ctx.fill();
+
+
+        /*
+           Actual eye
+        */
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+
+            x,
+            y,
+
+            1.8,
+
+            0,
+            Math.PI * 2
+
+        );
+
+
+        ctx.fillStyle =
+            "#ff0808";
+
+
+        ctx.shadowBlur =
+            18;
+
+
+        ctx.shadowColor =
+            "#ff0000";
+
+
+        ctx.fill();
+
+
+    }
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   LONG TAIL
+===================================================== */
+
+function drawTail(){
+
+    ctx.save();
+
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+
+    /*
+       Tail segments
+    */
+
+    for(
+        let i = 22;
+        i < BODY_COUNT;
+        i++
+    ){
+
+        const p =
+            body[i];
+
+
+        const previous =
+            body[i - 1];
+
+
+        const a =
+            Math.atan2(
+
+                p.y -
+                previous.y,
+
+                p.x -
+                previous.x
+
+            );
+
+
+        const w =
+            widthAt(i);
+
+
+        ctx.save();
+
+
+        ctx.translate(
+            p.x,
+            p.y
+        );
+
+
+        ctx.rotate(a);
+
+
+        /*
+           Chevron / spike
+        */
+
+        ctx.beginPath();
+
+
+        ctx.moveTo(
+            -1,
+            -w * 1.3
+        );
+
+
+        ctx.lineTo(
+            5,
+            0
+        );
+
+
+        ctx.lineTo(
+            -1,
+            w * 1.3
+        );
+
+
+        ctx.strokeStyle =
+            "rgba(180,180,180,.68)";
+
+
+        ctx.lineWidth =
+            Math.max(
+
+                .55,
+
+                1.1 -
+                (
+                    i - 22
+                ) * .025
+
+            );
+
+
+        ctx.stroke();
+
+
+        ctx.restore();
+
+    }
+
+
+    /*
+       STINGER
+    */
+
+    const tip =
+        body[
+            BODY_COUNT - 1
+        ];
+
+
+    const before =
+        body[
+            BODY_COUNT - 2
+        ];
+
+
+    const a =
+        Math.atan2(
+
+            tip.y -
+            before.y,
+
+            tip.x -
+            before.x
+
+        );
+
+
+    const length =
+        32;
+
+
+    ctx.beginPath();
+
+
+    ctx.moveTo(
+        tip.x,
+        tip.y
+    );
+
+
+    ctx.quadraticCurveTo(
+
+        tip.x +
+        Math.cos(a - .35) * 14,
+
+        tip.y +
+        Math.sin(a - .35) * 14,
+
+        tip.x +
+        Math.cos(a - .8) *
+        length,
+
+        tip.y +
+        Math.sin(a - .8) *
+        length
+
+    );
+
+
+    ctx.strokeStyle =
+        "rgba(235,235,235,.95)";
+
+
+    ctx.lineWidth =
+        1.8;
+
+
+    ctx.shadowBlur =
+        7;
+
+
+    ctx.shadowColor =
+        "rgba(255,0,0,.35)";
+
+
+    ctx.stroke();
+
+
+    ctx.restore();
+
+}
+
+
+/* =====================================================
+   CREEPY BODY TWITCH
+===================================================== */
+
+function horrorTwitch(){
+
+    const time =
+        performance.now() *
+        .006;
+
+
+    /*
+       Only tiny visual offset.
+       Does NOT permanently modify body.
+    */
+
+    return time;
+
+}
+
+
+/* =====================================================
+   MAIN ANIMATION
+===================================================== */
+
+function animate(){
+
+    /*
+       Clear
+    */
+
+    ctx.clearRect(
+        0,
+        0,
+        W,
+        H
+    );
+
+
+    /*
+       Update position
+    */
+
+    update();
+
+
+    /*
+       Horror atmosphere
+    */
+
+    horrorGlow();
+
+
+    horrorBodyGlow();
+
+
+    /*
+       Skeleton
+    */
+
+    drawLegs();
+
+    drawBody();
+
+    drawTail();
+
+    drawClaws();
+
+    drawHead();
+
+
+    /*
+       Horror details
+    */
+
+    horrorEyes();
+
+    horrorClawTips();
+
+
+    /*
+       Continue
+    */
+
+    requestAnimationFrame(
+        animate
+    );
+
+}
+
+
+animate();
+
+</script>
+
+</body>
+
+</html>
